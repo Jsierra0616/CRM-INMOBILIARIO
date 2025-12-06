@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Panel Administrativo - CMR</title>
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Scripts: autenticación + CRM interno -->
+  <script defer src="js/auth.js"></script>
+  <script defer src="js/admin.js"></script>
+</head>
+
+<body>
+
+<!-- PROTECCIÓN CONTRA INGRESO SIN LOGIN -->
+<script>
+  if (localStorage.getItem("ROL_CMR") !== "ADMIN") {
+    window.location.href = "login.html";
+  }
+</script>
+
+<!-- =============================
+     ENCABEZADO DEL PANEL
+     ============================= -->
+<header class="hero">
+
+  <!-- Imagen de fondo -->
+  <img class="hero-bg" src="fondo-moderno-de-la-calle-tokio.jpg">
+
+  <!-- Capa de logo + texto -->
+  <div class="hero-overlay">
+    <img class="logo-overlay" src="LOGO H2.png">
+    <div class="hero-text">
+      <h1>Panel Administrativo</h1>
+      <p>Gestión de Leads y Propiedades</p>
+    </div>
+  </div>
+
+  <!-- Menú superior con tabs -->
+  <nav class="topnav">
+    <button onclick="logout()" class="tab-btn">Cerrar sesión</button>
+    <button class="tab-btn active" data-tab="leads">Leads</button>
+    <button class="tab-btn" data-tab="propiedades">Propiedades</button>
+    <button class="tab-btn" data-tab="pipeline">Pipeline</button>
+  </nav>
+</header>
+
+<!-- =============================
+     CUERPO DEL PANEL CRM
+     ============================= -->
+<main class="container">
+
+  <!-- ===== TAB LEADS ===== -->
+  <section id="leads" class="tab-section active">
+    
+    <div class="card">
+      <h2>Leads</h2>
+
+      <!-- Formulario de creación/edición -->
+      <form id="leadForm" class="form">
+        <h3>Crear / Editar Lead</h3>
+
+        <!-- ID oculto (solo cuando se edita) -->
+        <input type="hidden" id="leadId">
+
+        <label>Nombre</label>
+        <input id="leadNombre">
+
+        <label>Email</label>
+        <input id="leadEmail">
+
+        <label>Teléfono</label>
+        <input id="leadTelefono">
+
+        <label>Interés</label>
+        <select id="leadInteres">
+          <option>Compra</option>
+          <option>Arriendo</option>
+          <option>Venta de inmueble</option>
+        </select>
+
+        <div class="form-actions">
+          <button class="btn primary">Guardar Lead</button>
+          <button type="button" id="leadCancelar" class="btn secondary">Cancelar</button>
+        </div>
+      </form>
+
+    </div>
+
+    <!-- Lista de leads -->
+    <div class="card">
+      <h3>Lista de Leads</h3>
+
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Email</th><th>Teléfono</th>
+            <th>Interés</th><th>Etapa</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="leadTableBody"></tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <!-- ===== TAB PROPIEDADES ===== -->
+  <section id="propiedades" class="tab-section">
+
+    <div class="card">
+      <h2>Propiedades</h2>
+
+      <label>Tipo de operación</label>
+<select id="propOperacion">
+  <option value="Compra">Compra</option>
+  <option value="Arriendo">Arriendo</option>
+  <option value="Venta de inmueble">Venta de inmueble</option>
+</select>
+
+
+      <!-- Formulario de creación/edición -->
+      <form id="propForm" class="form">
+        <h3>Nueva / Editar Propiedad</h3>
+
+        <!-- ID oculto -->
+        <input type="hidden" id="propId">
+
+        <!-- Campos -->
+        <label>Título</label>
+        <input id="propTitulo">
+
+        <label>Tipo</label>
+        <select id="propTipo">
+          <option>Apartamento</option>
+          <option>Casa</option>
+          <option>Local</option>
+          <option>Oficina</option>
+        </select>
+
+        <label>Zona</label>
+        <input id="propZona">
+
+        <label>Precio (COP)</label>
+        <input id="propPrecio" type="number">
+
+        <!-- Galería de fotos -->
+        <fieldset class="gallery-fieldset">
+          <legend>Fotos (URLs)</legend>
+          <input class="imgUrl">
+          <input class="imgUrl">
+          <input class="imgUrl">
+          <input class="imgUrl">
+          <input class="imgUrl">
+        </fieldset>
+
+        <div class="form-actions">
+          <button class="btn primary">Guardar</button>
+          <button type="button" id="propCancelar" class="btn secondary">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Listado de propiedades -->
+    <div class="card">
+      <h3>Lista de Propiedades</h3>
+      <div id="propCards" class="cards"></div>
+    </div>
+  </section>
+
+  <!-- ===== TAB PIPELINE ===== -->
+  <section id="pipeline" class="tab-section">
+
+    <h2>Pipeline de Leads</h2>
+
+    <div class="pipeline">
+
+      <div class="col">
+        <h3>Nuevo</h3>
+        <ul id="col-nuevo" class="kanban"></ul>
+      </div>
+
+      <div class="col">
+        <h3>Contactado</h3>
+        <ul id="col-contactado" class="kanban"></ul>
+      </div>
+
+      <div class="col">
+        <h3>En negociación</h3>
+        <ul id="col-negociacion" class="kanban"></ul>
+      </div>
+
+      <div class="col">
+        <h3>Cerrado</h3>
+        <ul id="col-cerrado" class="kanban"></ul>
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+<footer class="footer">
+  <small>CMR Inmobiliario H2</small>
+</footer>
+
+</body>
+</html>

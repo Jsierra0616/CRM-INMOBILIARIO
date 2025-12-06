@@ -2,161 +2,89 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>CMR Inmobiliario</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <!-- HEADER imagen de fondo -->
-  <header class="hero">
-    <!-- Imagen de fondo a todo lo ancho -->
-    <img class="hero-bg" src="fondo-moderno-de-la-calle-tokio.jpg" alt="Fondo del header" />
+  <title>CMR Inmobiliario - Portal Público</title>
 
-    <!-- Capa para logo y textos -->
+  <!-- Estilos globales del sistema -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Lógica del portal público (cargar listados, filtros, detalle) -->
+  <script defer src="js/APP.JS"></script>
+</head>
+
+<body>
+
+  <!-- =============================
+       HERO (portada visual)
+       ============================= -->
+  <header class="hero">
+
+    <!-- Imagen de fondo -->
+    <img class="hero-bg" src="fondo-moderno-de-la-calle-tokio.jpg" alt="Fondo">
+
+    <!-- Capa oscura + logo + texto -->
     <div class="hero-overlay">
-      <img class="logo-overlay" src="LOGO H2.png" alt="Logo compañía" />
+
+      <!-- Logo de la empresa -->
+      <img class="logo-overlay" src="LOGO H2.png" alt="Logo">
+
       <div class="hero-text">
-       
         <h1>CMR Inmobiliario</h1>
-        
-        <p>Leads • Propiedades • Pipeline</p>
+        <p>Encuentra tu próximo hogar</p>
       </div>
     </div>
 
-    <!-- Navegación -->
+    <!-- Enlace al acceso interno del personal -->
     <nav class="topnav">
-      <button class="tab-btn active" data-tab="leads">Leads</button>
-      <button class="tab-btn" data-tab="propiedades">Propiedades</button>
-      <button class="tab-btn" data-tab="pipeline">Pipeline</button>
+      <a href="login.html" class="tab-btn">Acceso del Personal</a>
     </nav>
   </header>
 
+  <!-- =============================
+       CONTENIDO PRINCIPAL
+       ============================= -->
   <main class="container">
-    <!-- LEADS -->
-    <section id="leads" class="tab-section active">
-      <div class="card">
-        <h2>Leads</h2>
 
-        <form id="leadForm" class="form">
-          <h3>Crear / Editar Lead</h3>
-          <input type="hidden" id="leadId" />
+    <h2>Explorar inmuebles</h2>
 
-          <label>Nombre</label>
-          <input id="leadNombre" type="text" placeholder="Ej: Ana Pérez" required />
+    <!-- =============================
+         FILTROS DE BÚSQUEDA
+         ============================= -->
+    <div class="card">
 
-          <label>Email</label>
-          <input id="leadEmail" type="email" placeholder="Ej: ana@mail.com" required />
+      <!-- Filtro por tipo de operación -->
+      <label>Tipo de operación:</label>
+      <select id="filterOperacion">
+        <option value="todos">Todos</option>
+        <option value="Compra">Compra</option>
+        <option value="Arriendo">Arriendo</option>
+        <option value="Venta de inmueble">Venta de Proyecto</option>
+      </select>
 
-          <label>Teléfono</label>
-          <input id="leadTelefono" type="text" placeholder="Ej: 3001234567" required />
+      <!-- Filtro por zona -->
+      <label>Barrio / Zona:</label>
+      <input type="text" id="filterZona" placeholder="Ej: Cedritos">
 
-          <label>Interés</label>
-          <select id="leadInteres">
-            <option value="Compra">Compra</option>
-            <option value="Arriendo">Arriendo</option>
-            <option value="Venta de inmueble">Venta de inmueble</option>
-          </select>
+      <!-- Filtro por precio -->
+      <label>Precio máximo (COP):</label>
+      <input type="number" id="filterPrecio" placeholder="Ej: 500000000">
 
-          <div class="form-actions">
-            <button type="submit" class="btn primary">Guardar Lead</button>
-            <button type="button" id="leadCancelar" class="btn secondary">Cancelar</button>
-          </div>
-        </form>
-      </div>
+      <!-- Botón que activa los filtros -->
+      <button id="btnFiltrar" class="btn primary">Aplicar filtros</button>
+    </div>
 
-      <div class="card">
-        <h3>Lista de Leads</h3>
-        <table class="tabla">
-          <thead>
-            <tr>
-              <th>Nombre</th><th>Email</th><th>Teléfono</th><th>Interés</th><th>Etapa</th><th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="leadTableBody"></tbody>
-        </table>
-      </div>
-    </section>
+    <!-- =============================
+         LISTADO PÚBLICO DE PROPIEDADES
+         ============================= -->
+    <div id="publicProps" class="cards"></div>
 
-    <!-- PROPIEDADES -->
-    <section id="propiedades" class="tab-section">
-      <div class="card">
-        <h2>Propiedades</h2>
-
-        <form id="propForm" class="form">
-          <h3>Nueva / Editar Propiedad</h3>
-          <input type="hidden" id="propId" />
-
-          <label>Título</label>
-          <input id="propTitulo" type="text" placeholder="Ej: Apto 2H en Chapinero" required />
-
-          <label>Tipo</label>
-          <select id="propTipo">
-            <option value="Apartamento">Apartamento</option>
-            <option value="Casa">Casa</option>
-            <option value="Local">Local</option>
-            <option value="Oficina">Oficina</option>
-          </select>
-
-          <label>Barrio / Zona</label>
-          <input id="propZona" type="text" placeholder="Ej: Chapinero" required />
-
-          <label>Precio (COP)</label>
-          <input id="propPrecio" type="number" min="0" step="1000" placeholder="450000000" required />
-
-          <!-- Galería: URLs (hasta 5) -->
-          <fieldset class="gallery-fieldset">
-            <legend>Fotos (hasta 5 URLs)</legend>
-            <input class="imgUrl" type="url" placeholder="URL de imagen 1" />
-            <input class="imgUrl" type="url" placeholder="URL de imagen 2 (opcional)" />
-            <input class="imgUrl" type="url" placeholder="URL de imagen 3 (opcional)" />
-            <input class="imgUrl" type="url" placeholder="URL de imagen 4 (opcional)" />
-            <input class="imgUrl" type="url" placeholder="URL de imagen 5 (opcional)" />
-            <p class="hint">Pega enlaces directos (.jpg, .png, etc.).</p>
-          </fieldset>
-
-          <div class="form-actions">
-            <button type="submit" class="btn primary">Guardar Propiedad</button>
-            <button type="button" id="propCancelar" class="btn secondary">Cancelar</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="card">
-        <h3>Lista de Propiedades</h3>
-        <div id="propCards" class="cards"></div>
-      </div>
-    </section>
-
-    <!--  PIPELINE  -->
-    <section id="pipeline" class="tab-section">
-      <h2>Pipeline</h2>
-      <div class="pipeline">
-        <div class="col">
-          <h3>Nuevo</h3>
-          <ul id="col-nuevo" class="kanban"></ul>
-        </div>
-        <div class="col">
-          <h3>Contactado</h3>
-          <ul id="col-contactado" class="kanban"></ul>
-        </div>
-        <div class="col">
-          <h3>En negociación</h3>
-          <ul id="col-negociacion" class="kanban"></ul>
-        </div>
-        <div class="col">
-          <h3>Cerrado</h3>
-          <ul id="col-cerrado" class="kanban"></ul>
-        </div>
-      </div>
-      <p class="hint">Usa los botones “Mover” para cambiar la etapa.</p>
-    </section>
   </main>
 
-  <!-- FOOTER con color fijo  -->
+  <!-- =============================
+       PIE DE PÁGINA
+       ============================= -->
   <footer class="footer">
     <small>CMR Inmobiliario H2</small>
   </footer>
 
-  <script src="function.js"></script>
 </body>
 </html>
-

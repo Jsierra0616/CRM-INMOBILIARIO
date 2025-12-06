@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Acceso Interno - CMR</title>
+
+  <!-- Estilos globales -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Manejador de inicio de sesión -->
+  <script defer src="js/auth.js"></script>
+
+  <!-- Estilos exclusivos del login -->
+  <style>
+    body {
+      background:#0b2239;
+      height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin:0;
+    }
+    .login-card {
+      width:350px;
+      background:white;
+      padding:24px;
+      border-radius:12px;
+      box-shadow:0 4px 10px rgba(0,0,0,.25);
+      text-align:center;
+    }
+    .login-card input {
+      width:100%;
+      padding:12px;
+      margin:6px 0 12px;
+      border:1px solid #ddd;
+      border-radius:10px;
+    }
+    .login-card button {
+      width:100%;
+      padding:12px;
+      border:0;
+      border-radius:10px;
+      background:#4c8bf5;
+      color:white;
+      font-size:16px;
+      cursor:pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- TARJETA DE LOGEO -->
+  <div class="login-card">
+
+    <!-- Logo -->
+    <img src="LOGO H2.png" width="150">
+
+    <!-- Título -->
+    <h2>Acceso del Personal</h2>
+
+    <!-- Campos de usuario y contraseña -->
+    <input type="text" id="user" placeholder="Usuario">
+    <input type="password" id="pass" placeholder="Contraseña">
+
+    <!-- Botón para ingresar -->
+    <button id="btnLogin">Ingresar</button>
+
+    <small>Solo para personal autorizado</small>
+  </div>
+
+</body>
+</html>

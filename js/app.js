@@ -1,79 +1,76 @@
-/* ------------------------------------------------------------
-   FUNCIÓN COMPARTIDA: cargar propiedades desde localStorage
-   ------------------------------------------------------------ */
+/* ============================================================
+   CONFIGURACIÓN GLOBAL
+   ============================================================ */
 
-function loadPublicProps() {
-  // Leemos la misma clave que usa admin.js: "cmr_props"
-  return JSON.parse(localStorage.getItem("cmr_props") || "[]");
+// URL base de la API (backend en Node)
+const API_BASE = "http://localhost:3000";
+
+/* ============================================================
+   FUNCIÓN COMPARTIDA: cargar propiedades desde la API
+   ============================================================ */
+
+async function loadPublicProps(filters = {}) {
+  const qs = new URLSearchParams();
+
+  if (filters.zona) qs.set("zona", filters.zona);
+  if (filters.precioMax) qs.set("precioMax", filters.precioMax);
+  if (filters.oper && filters.oper !== "todos") {
+    qs.set("operacion", filters.oper);
+  }
+
+  const response = await fetch(`${API_BASE}/api/public/properties?${qs.toString()}`);
+
+  if (!response.ok) {
+    throw new Error("Error cargando propiedades");
+  }
+
+  return await response.json();
 }
 
-/* ------------------------------------------------------------
-   EVENTO PRINCIPAL: cuando el DOM está listo
-   ------------------------------------------------------------ */
+/* ============================================================
+   EVENTO PRINCIPAL
+   ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  // Contenedor del listado en index.html (página pública)
-  const listContainer = document.getElementById("publicProps");
-
-  // Contenedor del detalle en detalle.html
+  const listContainer   = document.getElementById("publicProps");
   const detailContainer = document.getElementById("detallePropiedad");
 
   /* ==========================================================
-     1) LISTADO PÚBLICO (INDEX.HTML)
+     1) LISTADO PÚBLICO (index.html)
      ========================================================== */
   if (listContainer) {
 
-    // Referencias a los filtros
     const filtroZona   = document.getElementById("filterZona");
     const filtroPrecio = document.getElementById("filterPrecio");
     const filtroOper   = document.getElementById("filterOperacion");
     const btnFiltrar   = document.getElementById("btnFiltrar");
 
-    // Función que pinta las tarjetas según filtros
-    function renderListado() {
-      const zona  = (filtroZona.value || "").trim().toLowerCase();
-      const precioMax = Number(filtroPrecio.value || 0);
-      const oper  = filtroOper.value;   // "todos", "Compra", "Arriendo", etc.
+    async function renderListado() {
+      const zona      = (filtroZona?.value || "").trim().toLowerCase();
+      const precioMax = Number(filtroPrecio?.value || 0);
+      const oper      = filtroOper?.value || "todos";
 
-      // Cargamos TODAS las propiedades
-      const allProps = loadPublicProps();
+      let propiedades = [];
 
-      // Filtro básico
-      const filtradas = allProps.filter(p => {
-        // Filtro por zona (contiene el texto)
-        if (zona && !p.zona.toLowerCase().includes(zona)) return false;
-
-        // Filtro por precio máximo
-        if (precioMax && p.precio > precioMax) return false;
-
-        // Filtro por tipo de operación:
-        // si NO usas todavía "tipoOperacion" en admin,
-        // este bloque se puede comentar o dejar así:
-        if (oper !== "todos") {
-          // si existe p.tipoOperacion, filtramos por ese campo
-          if (p.tipoOperacion && p.tipoOperacion !== oper) return false;
-          // si NO existe, NO filtramos (para no eliminar la tarjeta)
-        }
-
-        return true;
-      });
-
-      // Limpiamos el contenedor
-      listContainer.innerHTML = "";
-
-      // Si no hay resultados, mostramos un mensaje amigable
-      if (filtradas.length === 0) {
-        listContainer.innerHTML = `<p>No se encontraron inmuebles con los filtros actuales.</p>`;
+      try {
+        propiedades = await loadPublicProps({ zona, precioMax, oper });
+      } catch (error) {
+        listContainer.innerHTML = "<p>Error cargando inmuebles.</p>";
         return;
       }
 
-      // Pintamos cada propiedad en una tarjeta
-      filtradas.forEach(p => {
+      listContainer.innerHTML = "";
+
+      if (propiedades.length === 0) {
+        listContainer.innerHTML = "<p>No se encontraron inmuebles.</p>";
+        return;
+      }
+
+      propiedades.forEach(p => {
         const card = document.createElement("article");
         card.className = "prop-card";
 
-        // Usamos la primera imagen si existe, o un placeholder
         const imgSrc = (p.images && p.images.length > 0)
           ? p.images[0]
           : "https://via.placeholder.com/300x200?text=Sin+imagen";
@@ -85,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <div class="prop-info">
             <h3>${p.titulo}</h3>
-            <p><b>Tipo:</b> ${p.tipo || "N/D"} — <b>Zona:</b> ${p.zona}</p>
+            <p><b>Tipo:</b> ${p.tipo || "N/D"} — <b>Zona:</b> ${p.zona || "N/D"}</p>
             <p><b>Precio:</b> $ ${Number(p.precio || 0).toLocaleString("es-CO")}</p>
           </div>
 
@@ -100,57 +97,62 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Render inicial al cargar la página
+    // Render inicial
     renderListado();
 
-    // Botón "Aplicar filtros" vuelve a renderizar
     if (btnFiltrar) {
       btnFiltrar.addEventListener("click", renderListado);
     }
   }
 
   /* ==========================================================
-     2) DETALLE DE INMUEBLE (DETALLE.HTML)
+     2) DETALLE DE INMUEBLE (detalle.html)
      ========================================================== */
   if (detailContainer) {
 
-    // Extraemos el ID del inmueble desde la URL: ?id=XYZ
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("id");
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
 
-    const props = loadPublicProps();
-    const prop = props.find(p => p.id === id);
+      let propiedades = [];
 
-    // Si no se encuentra, mostramos mensaje
-    if (!prop) {
-      detailContainer.innerHTML = "<p>Inmueble no encontrado.</p>";
-      return;
-    }
+      try {
+        propiedades = await loadPublicProps();
+      } catch (error) {
+        detailContainer.innerHTML = "<p>Error cargando el inmueble.</p>";
+        return;
+      }
 
-    // Construimos la galería con todas las imágenes
-    let galeriaHTML = "";
-    if (prop.images && prop.images.length > 0) {
-      prop.images.forEach(url => {
-        galeriaHTML += `
-          <img src="${url}" 
-               alt="Foto de ${prop.titulo}" 
-               style="width:100%; margin-bottom:10px; border-radius:8px;">
-        `;
-      });
-    } else {
-      galeriaHTML = `<p>Este inmueble no tiene fotos registradas.</p>`;
-    }
+      const prop = propiedades.find(p => String(p.id) === String(id));
 
-    // Insertamos todo el detalle en el contenedor
-    detailContainer.innerHTML = `
-      <h2>${prop.titulo}</h2>
-      <p><b>Tipo:</b> ${prop.tipo || "N/D"}</p>
-      <p><b>Zona:</b> ${prop.zona}</p>
-      <p><b>Precio:</b> $ ${Number(prop.precio || 0).toLocaleString("es-CO")}</p>
-      <hr>
-      <h3>Galería</h3>
-      ${galeriaHTML}
-    `;
+      if (!prop) {
+        detailContainer.innerHTML = "<p>Inmueble no encontrado.</p>";
+        return;
+      }
+
+      let galeriaHTML = "";
+
+      if (prop.images && prop.images.length > 0) {
+        prop.images.forEach(url => {
+          galeriaHTML += `
+            <img src="${url}"
+                 alt="Foto de ${prop.titulo}"
+                 style="width:100%; margin-bottom:10px; border-radius:8px;">
+          `;
+        });
+      } else {
+        galeriaHTML = "<p>Este inmueble no tiene fotos.</p>";
+      }
+
+      detailContainer.innerHTML = `
+        <h2>${prop.titulo}</h2>
+        <p><b>Tipo:</b> ${prop.tipo || "N/D"}</p>
+        <p><b>Zona:</b> ${prop.zona || "N/D"}</p>
+        <p><b>Precio:</b> $ ${Number(prop.precio || 0).toLocaleString("es-CO")}</p>
+        <hr>
+        <h3>Galería</h3>
+        ${galeriaHTML}
+      `;
+    })();
   }
-
 });

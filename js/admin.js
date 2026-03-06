@@ -1,80 +1,58 @@
 /* ===========================================================
-   SECCIÓN 1 — UTILIDADES Y MANEJO DE LOCAL STORAGE
-   Esta sección se define funciones generales para guardar y cargar
-   datos en el almacenamiento local del navegador.
+   ADMIN.JS — CRM INMOBILIARIO
+   - Leads y Pipeline: localStorage
+   - Propiedades: MySQL vía API (Node/Express)
+   =========================================================== */
+
+/* ===========================================================
+   CONFIGURACIÓN API (backend)
+   =========================================================== */
+const API_BASE = "http://localhost:3000";
+
+/* ===========================================================
+   SECCIÓN 1 — UTILIDADES Y LOCAL STORAGE (Solo Leads)
    =========================================================== */
 
 // Claves usadas en localStorage
 const STORAGE_KEYS = {
   LEADS: "cmr_leads",
-  PROPS: "cmr_props",
+  PROPS: "cmr_props", // (se deja por compatibilidad, pero ya no se usa)
 };
 
-/* ----ESTRUCTURA LEADS ---- */
+/* ---- LEADS (localStorage) ---- */
 
-// Carga la lista de leads desde localStorage
 function loadLeads() {
   return JSON.parse(localStorage.getItem(STORAGE_KEYS.LEADS) || "[]");
 }
 
-// Guarda la lista de leads en localStorage
 function saveLeads(list) {
   localStorage.setItem(STORAGE_KEYS.LEADS, JSON.stringify(list));
 }
 
-/* ---- PROPIEDADES ---- */
-
-// Carga las propiedades desde localStorage
-function loadProps() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPS) || "[]");
-}
-
-// Guarda las propiedades en localStorage
-function saveProps(list) {
-  localStorage.setItem(STORAGE_KEYS.PROPS, JSON.stringify(list));
-}
-
 /* ---- GENERADOR DE ID ÚNICO ---- */
-
-// Genera un ID aleatorio para nuevos registros
 function uid() {
   return Math.random().toString(36).slice(2, 9);
 }
 
 /* ===========================================================
-   SECCIÓN 2 — Permite alternar entre "Leads", "Propiedades" y "Pipeline".
+   SECCIÓN 2 — PESTAÑAS
    =========================================================== */
 
-// Botones de las pestañas
 const tabButtons = document.querySelectorAll(".tab-btn");
-
-// Secciones visibles según pestaña
 const tabSections = document.querySelectorAll(".tab-section");
 
-// Asignar eventos a cada pestaña
 tabButtons.forEach(btn => {
   btn.addEventListener("click", () => {
-
-    // Quitar estilos activos
     tabButtons.forEach(b => b.classList.remove("active"));
     tabSections.forEach(s => s.classList.remove("active"));
 
-    // Activar la pestaña que se clickeó
     btn.classList.add("active");
-
-    // Mostrar la sección correspondiente
     document.getElementById(btn.dataset.tab).classList.add("active");
   });
 });
 
 /* ===========================================================
-   SECCIÓN 3 — CRUD DE LEADS
-   Se encarga de:
-   - Crear nuevos leads
-   - Editar leads existentes
-   - Eliminar leads
-   - Mostrar la tabla de leads
-   - Cambiar etapas (Nuevo, Contactado, Negociación, Cerrado)
+   SECCIÓN 3 — CRUD DE LEADS (localStorage)
    =========================================================== */
 
 // Referencias a los campos del formulario
@@ -90,51 +68,53 @@ const leadCancelar = document.getElementById("leadCancelar");
 const leadTableBody = document.getElementById("leadTableBody");
 
 /* ---- GUARDAR O EDITAR LEAD ---- */
-leadForm.addEventListener("submit", (e) => {
-  e.preventDefault();
+if (leadForm) {
+  leadForm.addEventListener("submit", (e) => {
+    e.preventDefault();
 
-  const leads = loadLeads();
+    const leads = loadLeads();
 
-  const data = {
-    nombre: leadNombre.value.trim(),
-    email: leadEmail.value.trim(),
-    telefono: leadTelefono.value.trim(),
-    interes: leadInteres.value,
-  };
+    const data = {
+      nombre: leadNombre.value.trim(),
+      email: leadEmail.value.trim(),
+      telefono: leadTelefono.value.trim(),
+      interes: leadInteres.value,
+    };
 
-  // Validación básica
-  if (!data.nombre || !data.email || !data.telefono) {
-    alert("Completa todos los campos del lead.");
-    return;
-  }
+    if (!data.nombre || !data.email || !data.telefono) {
+      alert("Completa todos los campos del lead.");
+      return;
+    }
 
-  // Si el campo ID tiene valor, se edita
-  if (leadId.value) {
-    const idx = leads.findIndex(l => l.id === leadId.value);
-    if (idx > -1) leads[idx] = { ...leads[idx], ...data };
-  } 
-  // Si no tiene ID, se crea un nuevo lead
-  else {
-    leads.push({ id: uid(), ...data, etapa: "Nuevo" });
-  }
+    if (leadId.value) {
+      const idx = leads.findIndex(l => l.id === leadId.value);
+      if (idx > -1) leads[idx] = { ...leads[idx], ...data };
+    } else {
+      leads.push({ id: uid(), ...data, etapa: "Nuevo" });
+    }
 
-  saveLeads(leads);
+    saveLeads(leads);
 
-  leadForm.reset();
-  leadId.value = "";
+    leadForm.reset();
+    leadId.value = "";
 
-  renderLeads();
-  renderPipeline();
-});
+    renderLeads();
+    renderPipeline();
+  });
+}
 
 /* ---- BOTÓN CANCELAR ---- */
-leadCancelar.addEventListener("click", () => {
-  leadForm.reset();
-  leadId.value = "";
-});
+if (leadCancelar) {
+  leadCancelar.addEventListener("click", () => {
+    leadForm.reset();
+    leadId.value = "";
+  });
+}
 
 /* ---- DIBUJAR TABLA DE LEADS ---- */
 function renderLeads() {
+  if (!leadTableBody) return;
+
   const leads = loadLeads();
   leadTableBody.innerHTML = "";
 
@@ -163,12 +143,11 @@ function renderLeads() {
     leadTableBody.appendChild(tr);
   });
 
-  /* ---- BOTÓN EDITAR ---- */
+  // EDITAR
   leadTableBody.querySelectorAll("[data-edit]").forEach(btn => {
     btn.addEventListener("click", () => {
       const id = btn.getAttribute("data-edit");
       const l = loadLeads().find(x => x.id === id);
-
       if (!l) return;
 
       leadId.value = l.id;
@@ -177,25 +156,22 @@ function renderLeads() {
       leadTelefono.value = l.telefono;
       leadInteres.value = l.interes;
 
-      // Cambia a la pestaña de leads
-      document.querySelector('.tab-btn[data-tab="leads"]').click();
+      document.querySelector('.tab-btn[data-tab="leads"]')?.click();
     });
   });
 
-  /* ---- BOTÓN ELIMINAR ---- */
+  // ELIMINAR
   leadTableBody.querySelectorAll("[data-del]").forEach(btn => {
     btn.addEventListener("click", () => {
       const id = btn.getAttribute("data-del");
-
       const filtered = loadLeads().filter(x => x.id !== id);
-
       saveLeads(filtered);
       renderLeads();
       renderPipeline();
     });
   });
 
-  /* ---- CAMBIO DE ETAPA ---- */
+  // CAMBIO DE ETAPA
   leadTableBody.querySelectorAll("[data-stage]").forEach(sel => {
     sel.addEventListener("change", () => {
       const id = sel.getAttribute("data-stage");
@@ -212,16 +188,9 @@ function renderLeads() {
 }
 
 /* ===========================================================
-   SECCIÓN 4 — PIPELINE 
-   Muestra los leads según su etapa:
-   - Nuevo
-   - Contactado
-   - En negociación
-   - Cerrado
-   Permite moverlos adelante/atrás en el proceso.
+   SECCIÓN 4 — PIPELINE (localStorage)
    =========================================================== */
 
-// Columnas del pipeline
 const COLS = {
   "Nuevo": document.getElementById("col-nuevo"),
   "Contactado": document.getElementById("col-contactado"),
@@ -229,18 +198,15 @@ const COLS = {
   "Cerrado": document.getElementById("col-cerrado"),
 };
 
-// Orden de las etapas
 const ORDER = ["Nuevo", "Contactado", "En negociación", "Cerrado"];
 
-/* ---- DIBUJAR PIPELINE ---- */
 function renderPipeline() {
+  if (!COLS["Nuevo"]) return;
 
-  // Vaciar columnas
-  Object.values(COLS).forEach(ul => ul.innerHTML = "");
+  Object.values(COLS).forEach(ul => ul && (ul.innerHTML = ""));
 
   const leads = loadLeads();
 
-  // Pintar tarjetas
   leads.forEach(l => {
     const li = document.createElement("li");
     li.className = "card-lead";
@@ -259,16 +225,13 @@ function renderPipeline() {
     COLS[l.etapa]?.appendChild(li);
   });
 
-  // Manejar desplazamiento entre columnas
   document.querySelectorAll("[data-move]").forEach(btn => {
     btn.addEventListener("click", () => {
-
       const id = btn.getAttribute("data-id");
       const dir = btn.getAttribute("data-move");
 
       const leads = loadLeads();
       const idx = leads.findIndex(x => x.id === id);
-
       if (idx < 0) return;
 
       const pos = ORDER.indexOf(leads[idx].etapa);
@@ -284,18 +247,15 @@ function renderPipeline() {
 }
 
 /* ===========================================================
-   SECCIÓN 5 — CRUD DE PROPIEDADES
-   - Crear propiedades con galería de fotos
-   - Editar propiedades existentes
-   - Eliminar propiedades
-   - Mostrar tarjetas en el panel interno
+   SECCIÓN 5 — PROPIEDADES (API + MySQL)
    =========================================================== */
 
-// Referencias de formulario
+// Referencias de formulario (propiedades)
 const propForm = document.getElementById("propForm");
 const propId = document.getElementById("propId");
 const propTitulo = document.getElementById("propTitulo");
 const propTipo = document.getElementById("propTipo");
+const propOperacion = document.getElementById("propOperacion"); // ⚠️ Debe existir en admin.html
 const propZona = document.getElementById("propZona");
 const propPrecio = document.getElementById("propPrecio");
 const propCancelar = document.getElementById("propCancelar");
@@ -303,63 +263,108 @@ const propCancelar = document.getElementById("propCancelar");
 // Donde se dibujan las tarjetas
 const propCards = document.getElementById("propCards");
 
-/* ---- GUARDAR O EDITAR PROPIEDAD ---- */
-propForm.addEventListener("submit", (e) => {
-  e.preventDefault();
+/* ---- API helpers ---- */
 
-  const props = loadProps();
+async function apiGetProps() {
+  const r = await fetch(`${API_BASE}/api/admin/properties`);
+  if (!r.ok) throw new Error("No se pudieron cargar propiedades");
+  return await r.json();
+}
 
-  // Tomar URLs de imágenes del formulario
-  const urls = Array.from(propForm.querySelectorAll(".imgUrl"))
-    .map(i => i.value.trim())
-    .filter(u => u)
-    .slice(0, 5);
+async function apiCreateProp(data) {
+  const r = await fetch(`${API_BASE}/api/admin/properties`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!r.ok) throw new Error("No se pudo crear la propiedad");
+  return await r.json();
+}
 
-const data = {
-  titulo: propTitulo.value.trim(),
-  tipo: propTipo.value,              // Tipo inmueble (Apartamento, Casa…)
-  tipoOperacion: propOperacion.value, // Tipo operación (Compra, Arriendo, Venta)
-  zona: propZona.value.trim(),
-  precio: Number(propPrecio.value || 0),
-  images: urls,
-};
+async function apiUpdateProp(id, data) {
+  const r = await fetch(`${API_BASE}/api/admin/properties/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!r.ok) throw new Error("No se pudo actualizar la propiedad");
+  return await r.json();
+}
 
+async function apiDeleteProp(id) {
+  const r = await fetch(`${API_BASE}/api/admin/properties/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (!r.ok) throw new Error("No se pudo eliminar la propiedad");
+  return await r.json();
+}
 
-  if (!data.titulo || !data.zona || !data.precio) {
-    alert("Completa los campos básicos de la propiedad.");
+/* ---- GUARDAR O EDITAR PROPIEDAD (API) ---- */
+if (propForm) {
+  propForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const urls = Array.from(propForm.querySelectorAll(".imgUrl"))
+      .map(i => i.value.trim())
+      .filter(u => u)
+      .slice(0, 5);
+
+    const data = {
+      titulo: propTitulo.value.trim(),
+      tipo: propTipo.value || null,
+      tipoOperacion: propOperacion ? (propOperacion.value || null) : null,
+      zona: propZona.value.trim(),
+      precio: Number(propPrecio.value || 0),
+      images: urls,
+    };
+
+    if (!data.titulo || !data.zona || !data.precio) {
+      alert("Completa los campos básicos de la propiedad.");
+      return;
+    }
+
+    try {
+      if (propId.value) {
+        await apiUpdateProp(propId.value, data);
+      } else {
+        await apiCreateProp(data);
+      }
+
+      propForm.reset();
+      propId.value = "";
+      await renderProps();
+      alert("Propiedad guardada en base de datos ✅");
+    } catch (err) {
+      console.error(err);
+      alert("Error guardando la propiedad. Revisa consola (F12).");
+    }
+  });
+}
+
+/* ---- BOTÓN CANCELAR ---- */
+if (propCancelar) {
+  propCancelar.addEventListener("click", () => {
+    propForm.reset();
+    propId.value = "";
+  });
+}
+
+/* ---- DIBUJAR PROPIEDADES DESDE API ---- */
+async function renderProps() {
+  if (!propCards) return;
+
+  let props = [];
+  try {
+    props = await apiGetProps();
+  } catch (err) {
+    console.error(err);
+    propCards.innerHTML = "<p>Error cargando propiedades desde la API.</p>";
     return;
   }
 
-  // Editar
-  if (propId.value) {
-    const idx = props.findIndex(p => p.id === propId.value);
-    if (idx > -1) props[idx] = { ...props[idx], ...data };
-  }
-  // Crear nuevo
-  else {
-    props.push({ id: uid(), ...data });
-  }
-
-  saveProps(props);
-  propForm.reset();
-  propId.value = "";
-
-  renderProps();
-});
-
-/* ---- BOTÓN CANCELAR ---- */
-propCancelar.addEventListener("click", () => {
-  propForm.reset();
-  propId.value = "";
-});
-
-/* ---- DIBUJAR PROPIEDADES ---- */
-function renderProps() {
-  const props = loadProps();
   propCards.innerHTML = "";
 
   props.forEach(p => {
-
     const card = document.createElement("article");
     card.className = "prop-card";
 
@@ -372,12 +377,11 @@ function renderProps() {
       ph.className = "placeholder";
       ph.textContent = "Sin imágenes";
       gallery.appendChild(ph);
-    } 
-    else {
+    } else {
       p.images.slice(0, 5).forEach(url => {
         const img = document.createElement("img");
         img.src = url;
-        img.alt = "Foto de " + p.titulo;
+        img.alt = "Foto de " + (p.titulo || "Propiedad");
         gallery.appendChild(img);
       });
     }
@@ -385,11 +389,11 @@ function renderProps() {
     // Información
     const info = document.createElement("div");
     info.className = "prop-info";
-
     info.innerHTML = `
       <h3>${p.titulo}</h3>
-      <p><b>Tipo:</b> ${p.tipo} — <b>Zona:</b> ${p.zona}</p>
-      <p><b>Precio:</b> $ ${Number(p.precio).toLocaleString("es-CO")}</p>
+      <p><b>Tipo:</b> ${p.tipo || "N/D"} — <b>Operación:</b> ${p.tipoOperacion || "N/D"}</p>
+      <p><b>Zona:</b> ${p.zona || "N/D"}</p>
+      <p><b>Precio:</b> $ ${Number(p.precio || 0).toLocaleString("es-CO")}</p>
     `;
 
     // Acciones
@@ -407,53 +411,66 @@ function renderProps() {
     propCards.appendChild(card);
   });
 
-  /* ---- EDITAR ---- */
+  // EDITAR
   propCards.querySelectorAll("[data-edit]").forEach(btn => {
-    btn.addEventListener("click", () => {
-
+    btn.addEventListener("click", async () => {
       const id = btn.getAttribute("data-edit");
-      const p = loadProps().find(x => x.id === id);
 
+      let props = [];
+      try {
+        props = await apiGetProps();
+      } catch (err) {
+        console.error(err);
+        alert("Error cargando para editar.");
+        return;
+      }
+
+      const p = props.find(x => String(x.id) === String(id));
       if (!p) return;
 
       propId.value = p.id;
-      propTitulo.value = p.titulo;
-      propTipo.value = p.tipo;
-      propZona.value = p.zona;
-      propPrecio.value = p.precio;
+      propTitulo.value = p.titulo || "";
+      propTipo.value = p.tipo || "";
+
+      if (propOperacion) {
+        // Si el select no tiene ese valor, intenta dejarlo
+        propOperacion.value = p.tipoOperacion || "Compra";
+      }
+
+      propZona.value = p.zona || "";
+      propPrecio.value = p.precio || 0;
 
       const inputs = propForm.querySelectorAll(".imgUrl");
+      inputs.forEach((input, i) => {
+        input.value = (p.images && p.images[i]) ? p.images[i] : "";
+      });
 
-      inputs.forEach((input, i) => 
-        input.value = (p.images && p.images[i]) ? p.images[i] : ""
-      );
-
-      // Cambiar a pestaña propiedades
-      document.querySelector('.tab-btn[data-tab="propiedades"]').click();
+      document.querySelector('.tab-btn[data-tab="propiedades"]')?.click();
     });
   });
 
-  /* ---- ELIMINAR ---- */
+  // ELIMINAR
   propCards.querySelectorAll("[data-del]").forEach(btn => {
-    btn.addEventListener("click", () => {
-
+    btn.addEventListener("click", async () => {
       const id = btn.getAttribute("data-del");
+      if (!confirm("¿Seguro que deseas eliminar esta propiedad?")) return;
 
-      const filtered = loadProps().filter(x => x.id !== id);
-
-      saveProps(filtered);
-      renderProps();
+      try {
+        await apiDeleteProp(id);
+        await renderProps();
+      } catch (err) {
+        console.error(err);
+        alert("Error eliminando. Revisa consola (F12).");
+      }
     });
   });
 }
 
 /* ===========================================================
-   SECCIÓN 6 — Carga datos iniciales para que el sistema no quede vacío
-   y ejecuta los renders iniciales del CRM.
+   SECCIÓN 6 — DATOS INICIALES (solo Leads)
    =========================================================== */
 
 (function seedIfEmpty() {
-
   // Si no hay leads, insertar unos de ejemplo
   if (loadLeads().length === 0) {
     saveLeads([
@@ -475,35 +492,12 @@ function renderProps() {
       }
     ]);
   }
-
-  // Si no hay propiedades, insertar unas de ejemplo
-  if (loadProps().length === 0) {
-    saveProps([
-      {
-        id: uid(),
-        titulo: "Apto 2H en Chapinero",
-        tipo: "Apartamento",
-        zona: "Chapinero",
-        precio: 520000000,
-        images: [
-          "https://images.unsplash.com/photo-1505692794403-34d4982a83f0",
-          "https://images.unsplash.com/photo-1505691938895-1758d7feb511"
-        ]
-      },
-      {
-        id: uid(),
-        titulo: "Local Comercial Centro",
-        tipo: "Local",
-        zona: "Centro",
-        precio: 350000000,
-        images: []
-      }
-    ]);
-  }
-
 })();
 
-// Renderizado inicial
+/* ===========================================================
+   RENDER INICIAL
+   =========================================================== */
+
 renderLeads();
 renderPipeline();
 renderProps();
